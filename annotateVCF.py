@@ -67,7 +67,8 @@ class exac(object):
         If the variant is not found, it returns nan
         '''
         AF = []
-        for i in range(len(self.variantIDs)):
+        numVariants = len(self.variantIDs)
+        for i in range(numVariants):
             curr = self.queryResult[self.variantIDs[i]]['variant']
             if 'allele_freq' in curr.keys():
                 AF.append([curr['allele_freq']])
@@ -81,7 +82,8 @@ class exac(object):
         If the variant is not found, it returns an empty string.
         '''
         anno = []
-        for i in range(len(self.variantIDs)):
+        numVariants = len(self.variantIDs)
+        for i in range(numVariants):
             curr = self.queryResult[self.variantIDs[i]]
             if curr['consequence']:
                 cons = list(curr['consequence'].keys())
@@ -91,7 +93,7 @@ class exac(object):
                         severity.append(ENSEMBL_SEVERITY_ORDER.index(c))
                     else:
                         severity.append(float("inf"))
-                idx = min([(idx, val) for (val, idx) in enumerate(severity)])[1] # index at which there is maximum severity
+                idx = min([(idx, val) for (val, idx) in enumerate(severity)])[1] # index (in cons) at which there is maximum severity
                 anno.append(cons[idx])
             else:
                 anno.append('')
@@ -167,14 +169,18 @@ class VCFReader(object):
         return variantIDs
 
 def main(fname,outname):
-
-    vcfr = VCFReader(fname = fname)
+    '''
+    Returns a table that annotates each variant in a VCF file
+    '''
+    print('Extracting variant information..')
+    vcfr = VCFReader(fname = fname) # Create VCF file object
 
     varType = vcfr.extractType()
     allele_depths = vcfr.extractAD()
     variantIDs = vcfr.extractVariantIDs()
 
-    exac_obj = exac(variantIDs)
+    print('Querying ExAC database.. (internet connection required)')
+    exac_obj = exac(variantIDs) 
 
     allele_freq = exac_obj.allele_freq()
     conseq = exac_obj.consequence()
@@ -188,14 +194,20 @@ def main(fname,outname):
             varType[i] + allele_depths[i] + allele_freq[i]
         )
 
+    print('Outputing annotations..')
     combinedFeats_df = pd.DataFrame(combinedFeats, columns=vcfr.annotation_header)
     combinedFeats_df.to_csv(outname, sep='\t', header=True, index=False)
 
-if __name__ == "__main__":
-    fname = sys.argv[1]
-    outname = sys.argv[2]
-    main(fname, outname)
+    print('Done!')
 
+if __name__ == "__main__":
+
+    if len(sys.argv) == 3:
+        fname = sys.argv[1]
+        outname = sys.argv[2]
+        main(fname, outname)
+    else:
+        print('Error: insufficient number of arguments. Please provided a VCF file and an output name.')
 
 
 
