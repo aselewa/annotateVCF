@@ -207,7 +207,7 @@ if __name__ == "__main__":
         outname = sys.argv[2]
         main(fname, outname)
     else:
-        print('Error: insufficient number of arguments. Please provided a VCF file and an output name.')
+        print('Error: insufficient number of arguments. Please provide a VCF file and an output name.')
 
 
 
